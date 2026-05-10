@@ -13,89 +13,56 @@ For a given transaction, it should check:
 4. whether the transaction type is unusual for that sender
 """
 
-import pandas as pd
+from utils.config import BEHAVIOR_AGENT_CONFIG
+from utils.risk_utils import get_risk_level
 
-def analyze_behavior(transaction: dict, df: pd.DataFrame) -> dict:
+def analyze_behavior(transaction, customer_profiles, config=BEHAVIOR_AGENT_CONFIG):
     score = 0.0
     reasons = []
 
-    name_orig = transaction.get("nameOrig")
-    current_amount = transaction.get("amount", 0)
-    current_type = transaction.get("type")
-    current_step = transaction.get("step", 0)
+    user = transaction.get("nameOrig")
+    profile = customer_profiles.get(user, {})
 
-    # Only use past transaction of this sender
-    customer_history = df[
-        (df["nameOrig"] == name_orig) & 
-        (df["step"] < current_step)
-    ]
+    amount_ratio = transaction.get("customer_amount_ratio", 0)
+    txn_count = profile.get("txn_count", transaction.get("customer_txn_count", 0))
+    max_amount = profile.get("max_amount", 0)
 
-    history_count = len(customer_history)
+    if amount_ratio >= config["amount_ratio_high_threshold"]:
+        score += config["amount_ratio_high_weight"]
+        reasons.append(f"Transaction amount is highly unusual for customer: {amount_ratio:.2f}x average.")
+    elif amount_ratio >= config["amount_ratio_medium_threshold"]:
+        score += config["amount_ratio_medium_weight"]
+        reasons.append(f"Transaction amount is moderately unusual: {amount_ratio:.2f}x average.")
+    elif amount_ratio >= config["amount_ratio_low_threshold"]:
+        score += config["amount_ratio_low_weight"]
+        reasons.append(f"Transaction amount is slightly above customer pattern: {amount_ratio:.2f}x average.")
 
-    if history_count == 0:
-        reasons.append("No prior transaction found for this customer.")
-        return {
-            "agent": "behavior_agent",
-            "behavior_score": 0.1,
-            "risk_level": "LOW",
-            "reasons": reasons,
-            "history_count": history_count
-        }
-    
-    avg_amount = customer_history["amount"].mean()
-    max_amount = customer_history["amount"].max()
-    common_type = customer_history["type"].mode().iloc(0)
+    if transaction.get("amount", 0) > max_amount and max_amount > 0:
+        score += config["exceeds_history_max_weight"]
+        reasons.append("Transaction exceeds customer historical maximum amount.")
 
-    # Rule 1: Current amount much higher than historical average
-    if avg_amount > 0:
-        ratio = current_amount / avg_amount
+    if transaction.get("velocity_risk", 0) == 1:
+        score += config["velocity_risk_weight"]
+        reasons.append("High transaction velocity detected.")
 
-        if ratio > 10:
-            score += 0.45
-            reasons.append(
-                f"Current amount is {ratio:.2f}x higher than customer's historical average ({avg_amount:.2f})."
-            )
-        elif ratio > 5:
-            score += 0.30
-            reasons.append(
-                f"Current amount is {ratio:.2f}x higher than customer's historical average ({avg_amount:.2f})."
-            )
-        elif ratio > 2:
-            score += 0.15
-            reasons.append(
-                f"Current amount is {ratio:.2f}x higher than customer's historical average ({avg_amount:.2f})."
-            )
+    if transaction.get("is_night", 0) == 1:
+        score += config["night_risk_weight"]
+        reasons.append("Transaction occurred during night hours.")
 
-    # Rule 2: Current amount exceeds historical max
-    if current_amount > max_amount:
-        score += 0.20
-        reasons.append(
-            f"Current amount exceeds customer's previous maximum transaction amount ({max_amount:.2f})."
-        )
+    if transaction.get("amount_risk", 0) == 1:
+        score += config["amount_risk_weight"]
+        reasons.append("Amount risk signal is active.")
 
-    # Rule 3: Transaction type differs from usual behavior
-    if current_type != common_type:
-        score += 0.20
-        reasons.append(
-            f"Transaction type '{current_type}' differs from customer's most common historical type '{common_type}'."
-        )
+    if txn_count <= 1:
+        reasons.append("Limited customer history available.")
 
     score = min(score, 1.0)
-
-    if score >= 0.75:
-        risk_level = "HIGH"
-    elif score >= 0.40:
-        risk_level = "MEDIUM"
-    else:
-        risk_level = "LOW"
 
     return {
         "agent": "behavior_agent",
         "behavior_score": round(score, 2),
-        "risk_level": risk_level,
+        "score": round(score, 2),
         "reasons": reasons,
-        "history_count": history_count,
-        "avg_amount": round(avg_amount, 2),
-        "max_amount": round(max_amount, 2),
-        "common_type": common_type
+        "history_count": txn_count,
+        "risk_level": get_risk_level(score, "behavior_agent")
     }

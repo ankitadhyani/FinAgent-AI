@@ -1,5 +1,17 @@
+import sys
+import os
 
-def analyze_fraud(transaction: dict) -> dict:
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from utils.config import FRAUD_AGENT_CONFIG
+from utils.risk_utils import get_risk_level
+
+
+def _is_enabled(value) -> bool:
+    return value in [1, "1", True]
+
+
+def analyze_fraud(transaction: dict, config: dict = FRAUD_AGENT_CONFIG) -> dict:
     score = 0.0
     reasons = []
 
@@ -11,50 +23,82 @@ def analyze_fraud(transaction: dict) -> dict:
     oldbalance_dest = transaction.get("oldbalanceDest", 0)
     newbalance_dest = transaction.get("newbalanceDest", 0)
 
-    #Rule 1: Fraud in PaySim is mostly in TRANSFER and CASH_OUT
-    if txn_type in ["TRANSFER", "CASH_OUT"]:
-        score += 0.30
-        reasons.append(f"Transaction type '{txn_type}' is commonly associated with fraud in PaySim.")
+    amount_risk = transaction.get("amount_risk", 0)
+    velocity_risk = transaction.get("velocity_risk", 0)
+    device_risk = transaction.get("device_risk", 0)
+    balance_risk = transaction.get("balance_risk", 0)
 
-    # Rule 2: Large amount can be suspecious
-    if amount > 200000:
-        score += 0.30
+    if txn_type == "TRANSFER":
+        score += config["transfer_weight"]
+        reasons.append("TRANSFER type is commonly associated with fraud.")
+    elif txn_type == "CASH_OUT":
+        score += config["cashout_weight"]
+        reasons.append("CASH_OUT type is commonly associated with fraud.")
+
+    if amount > config["high_amount_threshold"]:
+        score += config["high_amount_weight"]
         reasons.append(f"High transaction amount detected: {amount}.")
-    elif amount > 50000:
-        score += 0.15
+    elif amount > config["moderate_amount_threshold"]:
+        score += config["moderate_amount_weight"]
         reasons.append(f"Moderately high transaction amount detected: {amount}.")
-    
-    # Rule 3: Sender has zero and near-zero balance but transaction still happened
-    if oldbalance_org == 0 and amount > 0:
-        score += 0.20
-        reasons.append("Origin account has zero balance before transaction, which is suspecious.")
-    
-    # Rule 4: Balance inconsistency at sender side
-    expected_newbalance_orig = oldbalance_org - amount
-    if abs(expected_newbalance_orig - newbalance_orig) > 1:
-        score += 0.15
-        reasons.append(f"Origin balance mismatch: expected {expected_newbalance_orig}, got {newbalance_orig}.")
 
-    # Rule 5: For 'Customer' destination accounts, zero balances may be suspecious
-    if str(name_dest).startswith("C"):
-        if oldbalance_dest == 0 and newbalance_dest == 0 and amount > 0:
-            score += 0.20
-            reasons.append("Destination is a customer account but destination balances remain zero.")
-    
-    # Cap score at 1.0
+    if oldbalance_org == 0 and amount > 0:
+        score += config["zero_origin_balance_weight"]
+        reasons.append("Origin account has zero balance before transaction.")
+
+    if (
+        str(name_dest).startswith("C")
+        and oldbalance_dest == 0
+        and newbalance_dest == 0
+        and amount > 0
+    ):
+        score += config["destination_zero_balance_weight"]
+        reasons.append("Destination account remains zero after transaction.")
+
+    if (
+        txn_type in ["TRANSFER", "CASH_OUT"]
+        and oldbalance_org > 0
+        and abs(oldbalance_org - amount) <= 1
+        and newbalance_orig == 0
+    ):
+        score += config["balance_emptied_weight"]
+        reasons.append("Sender balance fully emptied by transaction.")
+
+    if (
+        txn_type == "TRANSFER"
+        and amount > config["high_amount_threshold"]
+        and str(name_dest).startswith("C")
+        and oldbalance_dest == 0
+        and newbalance_dest == 0
+    ):
+        score += config["combined_pattern_weight"]
+        reasons.append("High-risk combined fraud pattern detected.")
+
+    if _is_enabled(amount_risk):
+        score += config["amount_risk_weight"]
+        reasons.append("Transaction amount is unusually high compared to the dataset baseline.")
+
+    if _is_enabled(velocity_risk):
+        score += config["velocity_risk_weight"]
+        txn_count = transaction.get("txn_count_1hr")
+        reasons.append(f"High transaction velocity detected: {txn_count} transactions in 1 hour.")
+
+    if _is_enabled(device_risk):
+        score += config["device_risk_weight"]
+        device_type = transaction.get("device_type")
+        reasons.append(f"Transaction used a higher-risk device channel: {device_type}.")
+
+    if _is_enabled(balance_risk):
+        score += config["balance_risk_weight"]
+        reasons.append("Engineered balance-risk pattern detected.")
+
     score = min(score, 1.0)
 
-    #Convert score into label
-    if score >= 0.75:
-        risk_level = "HIGH"
-    elif score >= 0.40:
-        risk_level = "MEDIUM"
-    else:
-        risk_level = "LOW"
-    
     return {
         "agent": "fraud_agent",
         "fraud_score": round(score, 2),
-        "risk_level": risk_level,
+        "score": round(score, 2),
+        "risk_level": get_risk_level(score, "fraud_agent"),
         "reasons": reasons
     }
+    

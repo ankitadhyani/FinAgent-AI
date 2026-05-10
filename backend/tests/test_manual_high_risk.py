@@ -38,9 +38,7 @@ if __name__ == "__main__":
         "newbalanceOrig": 0.0,
         "nameDest": "C888888888",
         "oldbalanceDest": 0.0,
-        "newbalanceDest": 0.0,
-        "isFraud": 1,
-        "isFlaggedFraud": 1
+        "newbalanceDest": 0.0
     }
 
     print("\n===== MANUAL HIGH-RISK TRANSACTION =====")

@@ -1,0 +1,354 @@
+import { useEffect, useMemo, useState } from "react";
+import {
+  Bot,
+  CheckCircle2,
+  Gauge,
+  ListChecks,
+  Save,
+} from "lucide-react";
+import { getRiskConfig } from "../api/client";
+import { getModelMetrics } from "../api/client";
+
+const agentMeta = {
+  fraud: { label: "Fraud Agent", accent: "#60a5fa" },
+  behavior: { label: "Behavior Agent", accent: "#22c55e" },
+  merchant: { label: "Receiver Agent", accent: "#f59e0b" },
+  location: { label: "Location Agent", accent: "#94a3b8" },
+  ai_analyst: { label: "AI Risk Analyst Agent", accent: "#a78bfa" },
+};
+
+const fallbackConfig = {
+  agent_risk_bands: {
+    fraud_agent: { HIGH: 0.35, MEDIUM: 0.3 },
+    behavior_agent: { HIGH: 0.3, MEDIUM: 0.2 },
+    merchant_agent: { HIGH: 0.15, MEDIUM: 0.1 },
+    location_agent: { HIGH: 0.1, MEDIUM: 0.05 },
+    ai_analyst_agent: { HIGH: 0.5, MEDIUM: 0.3 },
+  },
+  final_agent_weights: {
+    fraud: 0.45,
+    behavior: 0.3,
+    merchant: 0.15,
+    location: 0.1,
+    ai_analyst: 0.1,
+  },
+  final_system_thresholds: {
+    ESCALATE: 0.3,
+    BLOCK: 0.5,
+  },
+  agent_configs: {},
+};
+
+function formatPercent(value) {
+  return `${(Number(value || 0) * 100).toFixed(1)}%`;
+}
+
+function buildDetectionRules(config) {
+  const agents = config.agent_configs || {};
+  return [
+    {
+      rule: `High amount > $${Number(agents.fraud_agent?.high_amount_threshold ?? 200000).toLocaleString()}`,
+      agent: "Fraud Agent",
+      impact: "High",
+      status: "Active",
+    },
+    {
+      rule: `Amount ratio > ${agents.behavior_agent?.amount_ratio_medium_threshold ?? 5}x average`,
+      agent: "Behavior Agent",
+      impact: "Medium",
+      status: "Active",
+    },
+    {
+      rule: `Unique senders >= ${agents.merchant_agent?.unique_senders_medium_threshold ?? 5}`,
+      agent: "Receiver Agent",
+      impact: "Medium",
+      status: "Active",
+    },
+    {
+      rule: `Geo distance > ${agents.location_agent?.moderate_distance_threshold ?? 100} km`,
+      agent: "Location Agent",
+      impact: "Medium",
+      status: "Active",
+    },
+    {
+      rule: `Geo distance > ${agents.location_agent?.extreme_distance_threshold ?? 500} km`,
+      agent: "Location Agent",
+      impact: "High",
+      status: "Active",
+    },
+  ];
+}
+
+function RulesModels() {
+  const [riskConfig, setRiskConfig] = useState(fallbackConfig);
+  const [modelMetrics, setModelMetrics] = useState(null);
+
+  useEffect(() => {
+    let isActive = true;
+
+    getRiskConfig()
+      .then((config) => {
+        if (isActive) setRiskConfig({ ...fallbackConfig, ...config });
+      })
+      .catch(() => {
+        if (isActive) setRiskConfig(fallbackConfig);
+      });
+
+    getModelMetrics()
+      .then((metrics) => {
+        if (isActive) setModelMetrics(metrics);
+      })
+      .catch((error) => {
+        console.error("Failed to load model metrics:", error);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const weights = useMemo(
+    () =>
+      Object.entries(riskConfig.final_agent_weights || {}).map(([key, value]) => ({
+        key,
+        value,
+        ...(agentMeta[key] || { label: key, accent: "#94a3b8" }),
+      })),
+    [riskConfig]
+  );
+
+  const thresholds = riskConfig.final_system_thresholds || {};
+  const agentBands = riskConfig.agent_risk_bands || {};
+  const detectionRules = useMemo(() => buildDetectionRules(riskConfig), [riskConfig]);
+
+  const totalWeight = useMemo(
+    () => weights.reduce((sum, item) => sum + Number(item.value || 0), 0),
+    [weights]
+  );
+
+  const agentDisplayNames = {
+    fraud_agent: "Fraud",
+    behavior_agent: "Behavior",
+    merchant_agent: "Receiver",
+    location_agent: "Location",
+    ai_analyst_agent: "AI Risk Analyst",
+  };
+
+  return (
+    <div className="dashboard rules-page">
+      <header className="dashboard-page-header rules-page-header">
+        <div>
+          <h1>Rules & Models</h1>
+          <p>Manage detection rules, model weights, and risk thresholds.</p>
+        </div>
+
+        <div className="rules-header-actions">
+          <span className="rules-status-pill">
+            <CheckCircle2 size={15} strokeWidth={2.4} />
+            Active policy
+          </span>
+
+          <button className="rules-primary-btn" type="button">
+            <Save size={15} strokeWidth={2.4} />
+            Save Policy
+          </button>
+        </div>
+      </header>
+
+      <section className="model-performance-header">
+        <h2>Model Performance on Validation Sample</h2>
+        <p>
+          Evaluation metrics computed on a balanced fraud vs non-fraud validation dataset.
+        </p>
+      </section>
+
+      <section className="model-performance-grid">
+        <article className="model-performance-card">
+          <span>Accuracy</span>
+          <strong>{formatPercent(modelMetrics?.accuracy ?? 0)}</strong>
+          <p>Overall correct predictions.</p>
+        </article>
+
+        <article className="model-performance-card">
+          <span>Precision</span>
+          <strong>{formatPercent(modelMetrics?.precision ?? 0)}</strong>
+          <p>Flagged frauds that were truly fraud.</p>
+        </article>
+
+        <article className="model-performance-card">
+          <span>Recall</span>
+          <strong>{formatPercent(modelMetrics?.recall ?? 0)}</strong>
+          <p>Actual frauds successfully detected.</p>
+        </article>
+
+        <article className="model-performance-card">
+          <span>F1-score</span>
+          <strong>{formatPercent(modelMetrics?.f1 ?? 0)}</strong>
+          <p>Balanced precision and recall score.</p>
+        </article>
+      </section>
+
+      <section className="confusion-matrix-summary">
+        <span>
+          TP (True Positive): {modelMetrics?.tp ?? 0} | FP (False Positive): {modelMetrics?.fp ?? 0} | TN (True Negative):{" "}
+          {modelMetrics?.tn ?? 0} | FN (False Negative): {modelMetrics?.fn ?? 0}
+        </span>
+      </section>
+
+      <section className="rules-grid">
+        <article className="rules-card model-weights-card">
+          <div className="rules-card-header">
+            <div className="rules-card-icon blue">
+              <Bot size={20} strokeWidth={2.3} />
+            </div>
+            <div>
+              <h2>Model Weights</h2>
+              <p>Relative contribution of each risk agent.</p>
+            </div>
+          </div>
+
+          <div className="weight-list">
+            {weights.map((item) => (
+              <label
+                className={item.disabled ? "weight-row weight-row-disabled" : "weight-row"}
+                key={item.key}
+              >
+                <div>
+                  <span>
+                    {item.label}
+                    {item.note ? <em>{item.note}</em> : null}
+                  </span>
+                  <strong>{formatPercent(item.value)}</strong>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={item.value}
+                  disabled
+                  style={{ accentColor: item.accent }}
+                  readOnly
+                />
+              </label>
+            ))}
+          </div>
+
+          <div className={Math.abs(totalWeight - 1) < 0.001 ? "weight-total valid" : "weight-total warning"}>
+            <span>Total</span>
+            <strong>{formatPercent(totalWeight)}</strong>
+          </div>
+        </article>
+
+        <article className="rules-card detection-rules-card">
+          <div className="rules-card-header">
+            <div className="rules-card-icon orange">
+              <ListChecks size={20} strokeWidth={2.3} />
+            </div>
+            <div>
+              <h2>Top Detection Rules</h2>
+              <p>Currently active signals driving agent decisions.</p>
+            </div>
+          </div>
+
+          <div className="rules-table-wrap">
+            <table className="rules-table">
+              <thead>
+                <tr>
+                  <th>Rule</th>
+                  <th>Agent</th>
+                  <th>Impact</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detectionRules.map((item) => (
+                  <tr key={`${item.rule}-${item.agent}`}>
+                    <td>{item.rule}</td>
+                    <td>{item.agent}</td>
+                    <td>
+                      <span className={`rule-impact ${item.impact.toLowerCase()}`}>
+                        {item.impact}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`rule-status ${item.status.toLowerCase()}`}>
+                        {item.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <aside className="rules-card threshold-card">
+          <div className="rules-card-header">
+            <div className="rules-card-icon green">
+              <Gauge size={20} strokeWidth={2.3} />
+            </div>
+            <div>
+              <h2>Thresholds</h2>
+              <p>Current decision cutoffs for risk scoring.</p>
+            </div>
+          </div>
+
+          <div className="threshold-list">
+            <label className="threshold-row">
+              <div>
+                <span>BLOCK Threshold</span>
+                <strong>{Number(thresholds.BLOCK ?? 0).toFixed(2)}</strong>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={thresholds.BLOCK ?? 0}
+                disabled
+                readOnly
+              />
+            </label>
+
+            <label className="threshold-row">
+              <div>
+                <span>ESCALATE Threshold</span>
+                <strong>{Number(thresholds.ESCALATE ?? 0).toFixed(2)}</strong>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={thresholds.ESCALATE ?? 0}
+                disabled
+                readOnly
+              />
+            </label>
+          </div>
+
+          <div className="future-tuning-card">
+            <div>
+              <h3>Agent Risk Bands</h3>
+
+              {Object.entries(agentBands).map(([agent, bands]) => (
+                <div className="agent-band-row compact" key={agent}>
+                  <span className="agent-band-name">
+                    {agentDisplayNames[agent] || agent}
+                  </span>
+                  <div className="agent-band-values">
+                    <span>High: {Number(bands.HIGH).toFixed(2)}</span>
+                    <span>Medium: {Number(bands.MEDIUM).toFixed(2)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </aside>
+      </section>
+    </div>
+  );
+}
+
+export default RulesModels;

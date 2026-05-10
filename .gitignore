@@ -1,13 +1,24 @@
-# Ignore datasets
-backend/data/*.csv
-
-# Python cache
+# Python
 __pycache__/
 *.pyc
+.pytest_cache/
 
-# Mac files
+# Node
+node_modules/
+dist/
+
+# macOS
 .DS_Store
 
-# Virtual environments
-venv/
+# Environment
 .env
+venv/
+.venv/
+
+# Logs
+*.log
+
+# Large generated backend data
+backend/data/*.csv
+backend/data/*.pkl
+backend/data/*.json

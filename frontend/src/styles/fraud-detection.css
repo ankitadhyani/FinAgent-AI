@@ -1,0 +1,375 @@
+.fraud-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.fraud-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 0;
+}
+
+.fraud-window-pill {
+  background: rgba(59, 130, 246, 0.18);
+  color: #dbeafe;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.agent-card,
+.fraud-panel,
+.runtime-metric-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03)),
+    var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  position: relative;
+}
+
+.agent-card {
+  min-height: 120px;
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.agent-card::before,
+.runtime-metric-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+.agent-card-icon,
+.runtime-metric-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(191, 204, 222, 0.24);
+  position: relative;
+  z-index: 1;
+}
+
+.agent-card > div:last-child,
+.runtime-metric-card > div:last-child {
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.agent-card span,
+.runtime-metric-card span {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 850;
+  margin-bottom: 7px;
+}
+
+.agent-card strong,
+.runtime-metric-card strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 28px;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.agent-card p,
+.runtime-metric-card p {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 750;
+  margin-top: 7px;
+}
+
+.agent-card small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.35;
+  margin-top: 6px;
+}
+
+.agent-card-red::before {
+  background: radial-gradient(circle at 10% 10%, rgba(239, 68, 68, 0.85), transparent 42%);
+}
+
+.agent-card-red .agent-card-icon {
+  color: var(--red);
+}
+
+.agent-card-blue::before {
+  background: radial-gradient(circle at 10% 10%, rgba(59, 130, 246, 0.85), transparent 42%);
+}
+
+.agent-card-blue .agent-card-icon {
+  color: var(--accent);
+}
+
+.agent-card-yellow::before {
+  background: radial-gradient(circle at 10% 10%, rgba(245, 158, 11, 0.85), transparent 42%);
+}
+
+.agent-card-yellow .agent-card-icon {
+  color: var(--yellow);
+}
+
+.agent-card-green::before {
+  background: radial-gradient(circle at 10% 10%, rgba(34, 197, 94, 0.85), transparent 42%);
+}
+
+.agent-card-green .agent-card-icon {
+  color: var(--green);
+}
+
+.agent-card-disabled {
+  opacity: 0.78;
+}
+
+.agent-card-disabled::before {
+  background: radial-gradient(circle at 10% 10%, rgba(148, 163, 184, 0.65), transparent 42%);
+}
+
+.agent-card-disabled .agent-card-icon {
+  color: var(--text-muted);
+}
+
+.agent-card-disabled strong,
+.agent-card-disabled p {
+  color: var(--text-muted);
+}
+
+.fraud-analytics-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr);
+  gap: 14px;
+}
+
+.fraud-panel {
+  min-height: 300px;
+  padding: 16px 18px;
+}
+
+.fraud-panel-header {
+  margin-bottom: 18px;
+}
+
+.fraud-panel-header h2 {
+  color: var(--text-primary);
+  font-size: 21px;
+  font-weight: 850;
+  margin-bottom: 4px;
+}
+
+.fraud-panel-header p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.risk-factor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.risk-factor-row > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.risk-factor-row strong {
+  color: var(--text-primary);
+}
+
+.risk-factor-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(5, 9, 22, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  overflow: hidden;
+}
+
+.risk-factor-fill {
+  display: block;
+  height: 100%;
+  min-width: 6px;
+  border-radius: inherit;
+}
+
+.risk-factor-fill-red {
+  background: var(--red);
+}
+
+.risk-factor-fill-yellow {
+  background: var(--yellow);
+}
+
+.risk-factor-fill-blue {
+  background: var(--accent);
+}
+
+.risk-factor-fill-green {
+  background: var(--green);
+}
+
+.fraud-distribution-layout {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.95fr) minmax(190px, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.fraud-donut-wrap {
+  position: relative;
+  min-height: 220px;
+}
+
+.fraud-donut-center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.fraud-donut-center strong {
+  color: var(--text-primary);
+  font-size: 30px;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.fraud-donut-center span {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+
+.fraud-distribution-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fraud-distribution-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.fraud-distribution-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fraud-distribution-row i {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.fraud-distribution-row strong {
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.runtime-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.runtime-metric-card {
+  min-height: 92px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.runtime-metric-card::before {
+  background: radial-gradient(circle at 10% 10%, rgba(59, 130, 246, 0.72), transparent 42%);
+}
+
+.runtime-metric-icon {
+  width: 38px;
+  height: 38px;
+  color: #60a5fa;
+}
+
+.runtime-metric-card strong {
+  font-size: 19px;
+}
+
+@media (max-width: 1280px) {
+  .agent-grid,
+  .runtime-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fraud-analytics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .fraud-page-header {
+    flex-direction: column;
+  }
+
+  .agent-grid,
+  .runtime-grid,
+  .fraud-distribution-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.agent-card-purple::before {
+  background: radial-gradient(circle at 10% 10%, rgba(167, 139, 250, 0.85), transparent 42%);
+}
+
+.agent-card-purple .agent-card-icon {
+  color: #a78bfa;
+}

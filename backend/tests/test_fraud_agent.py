@@ -28,6 +28,7 @@ if __name__ == "__main__":
 
     print("\n===== Last 5 FRAUD TRANSACTION =====")
     fraud_txns = get_last_five_fraud_transaction(df)
+
     for index, row in fraud_txns.iterrows():
-        fraud_result = analyze_fraud(row)
+        fraud_result = analyze_fraud(row.to_dict())
         print("transaction #", index, " ", fraud_result)
