@@ -153,6 +153,20 @@ function RulesModels() {
     return correct / transactions.length;
   }, [transactions]);
 
+  const ruleBasedAccuracy = useMemo(() => {
+    if (!transactions.length) return 0;
+
+    const correct = transactions.filter((txn) => {
+      const actualFraud = Number(txn.isFraud) === 1;
+      const ruleFlagged =
+        txn.decision === "ESCALATE" || txn.decision === "BLOCK";
+
+      return actualFraud === ruleFlagged;
+    }).length;
+
+    return correct / transactions.length;
+  }, [transactions]);
+
   return (
     <div className="dashboard rules-page">
       <header className="dashboard-page-header rules-page-header">
@@ -349,14 +363,14 @@ function RulesModels() {
           <div className="model-performance-header">
             <h2>Detection Performance Summary</h2>
             <p>
-              Rule-based scoring is evaluated across PaySim transactions, while the AI Risk Analyst is tracked separately.
+              Rule-based scoring and AI Analyst decisions are evaluated on the same sampled demo transactions.
             </p>
           </div>
 
           <div className="performance-card-grid">
             <article className="model-performance-card">
               <span>Rule-Based Detection Accuracy</span>
-              <strong>{formatPercent(modelMetrics?.accuracy ?? 0)}</strong>
+              <strong>{formatPercent(ruleBasedAccuracy)}</strong>
               <p>Final rule-based multi-agent scoring accuracy across PaySim transactions.</p>
             </article>
 
