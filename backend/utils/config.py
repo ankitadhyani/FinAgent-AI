@@ -104,15 +104,13 @@ AGENT_RISK_BANDS = {
     "fraud_agent": {"HIGH": 0.35, "MEDIUM": 0.30},
     "behavior_agent": {"HIGH": 0.30, "MEDIUM": 0.20},
     "merchant_agent": {"HIGH": 0.15, "MEDIUM": 0.10},
-  "location_agent": {"HIGH": 0.30,"MEDIUM": 0.15},  
-  "ai_analyst_agent": {"HIGH": 0.50, "MEDIUM": 0.30},
+    "location_agent": {"HIGH": 0.30,"MEDIUM": 0.15},
 }
 FINAL_AGENT_WEIGHTS = {
     "fraud": 0.40,
     "behavior": 0.25,
     "merchant": 0.15,
-    "location": 0.10,
-    "ai_analyst": 0.10,
+    "location": 0.20,
 }
 FINAL_SYSTEM_THRESHOLDS = {
     "ESCALATE": 0.30,

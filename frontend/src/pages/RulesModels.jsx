@@ -6,15 +6,13 @@ import {
   ListChecks,
   Save,
 } from "lucide-react";
-import { getRiskConfig } from "../api/client";
-import { getModelMetrics } from "../api/client";
+import { getRiskConfig, getModelMetrics, getTransactions } from "../api/client";
 
 const agentMeta = {
   fraud: { label: "Fraud Agent", accent: "#60a5fa" },
   behavior: { label: "Behavior Agent", accent: "#22c55e" },
   merchant: { label: "Receiver Agent", accent: "#f59e0b" },
   location: { label: "Location Agent", accent: "#94a3b8" },
-  ai_analyst: { label: "AI Risk Analyst Agent", accent: "#a78bfa" },
 };
 
 const fallbackConfig = {
@@ -23,14 +21,12 @@ const fallbackConfig = {
     behavior_agent: { HIGH: 0.3, MEDIUM: 0.2 },
     merchant_agent: { HIGH: 0.15, MEDIUM: 0.1 },
     location_agent: { HIGH: 0.1, MEDIUM: 0.05 },
-    ai_analyst_agent: { HIGH: 0.5, MEDIUM: 0.3 },
   },
   final_agent_weights: {
     fraud: 0.45,
     behavior: 0.3,
     merchant: 0.15,
     location: 0.1,
-    ai_analyst: 0.1,
   },
   final_system_thresholds: {
     ESCALATE: 0.3,
@@ -80,8 +76,10 @@ function buildDetectionRules(config) {
 }
 
 function RulesModels() {
+  const [activeTab, setActiveTab] = useState("policy");
   const [riskConfig, setRiskConfig] = useState(fallbackConfig);
   const [modelMetrics, setModelMetrics] = useState(null);
+  const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
     let isActive = true;
@@ -100,6 +98,14 @@ function RulesModels() {
       })
       .catch((error) => {
         console.error("Failed to load model metrics:", error);
+      });
+
+    getTransactions({ limit: 600, offset: 0 })
+      .then((response) => {
+        if (isActive) setTransactions(response.items || []);
+      })
+      .catch((error) => {
+        console.error("Failed to load transactions for AI accuracy:", error);
       });
 
     return () => {
@@ -131,15 +137,28 @@ function RulesModels() {
     behavior_agent: "Behavior",
     merchant_agent: "Receiver",
     location_agent: "Location",
-    ai_analyst_agent: "AI Risk Analyst",
   };
+
+  const aiAccuracy = useMemo(() => {
+    if (!transactions.length) return 0;
+
+    const correct = transactions.filter((txn) => {
+      const actualFraud = Number(txn.isFraud) === 1;
+      const aiFlagged =
+        txn.ai_decision === "ESCALATE" || txn.ai_decision === "BLOCK";
+
+      return actualFraud === aiFlagged;
+    }).length;
+
+    return correct / transactions.length;
+  }, [transactions]);
 
   return (
     <div className="dashboard rules-page">
       <header className="dashboard-page-header rules-page-header">
         <div>
           <h1>Rules & Models</h1>
-          <p>Manage detection rules, model weights, and risk thresholds.</p>
+          <p>Configure fraud detection policies, multi-agent scoring logic, and investigation thresholds.</p>
         </div>
 
         <div className="rules-header-actions">
@@ -155,47 +174,25 @@ function RulesModels() {
         </div>
       </header>
 
-      <section className="model-performance-header">
-        <h2>Model Performance on Validation Sample</h2>
-        <p>
-          Evaluation metrics computed on a balanced fraud vs non-fraud validation dataset.
-        </p>
-      </section>
+      <div className="rules-tabs" role="tablist" aria-label="Rules and models sections">
+        <button
+          className={`rules-tab-button${activeTab === "policy" ? " active" : ""}`}
+          type="button"
+          onClick={() => setActiveTab("policy")}
+        >
+          Policy Configuration
+        </button>
+        <button
+          className={`rules-tab-button${activeTab === "performance" ? " active" : ""}`}
+          type="button"
+          onClick={() => setActiveTab("performance")}
+        >
+          Performance Summary
+        </button>
+      </div>
 
-      <section className="model-performance-grid">
-        <article className="model-performance-card">
-          <span>Accuracy</span>
-          <strong>{formatPercent(modelMetrics?.accuracy ?? 0)}</strong>
-          <p>Overall correct predictions.</p>
-        </article>
-
-        <article className="model-performance-card">
-          <span>Precision</span>
-          <strong>{formatPercent(modelMetrics?.precision ?? 0)}</strong>
-          <p>Flagged frauds that were truly fraud.</p>
-        </article>
-
-        <article className="model-performance-card">
-          <span>Recall</span>
-          <strong>{formatPercent(modelMetrics?.recall ?? 0)}</strong>
-          <p>Actual frauds successfully detected.</p>
-        </article>
-
-        <article className="model-performance-card">
-          <span>F1-score</span>
-          <strong>{formatPercent(modelMetrics?.f1 ?? 0)}</strong>
-          <p>Balanced precision and recall score.</p>
-        </article>
-      </section>
-
-      <section className="confusion-matrix-summary">
-        <span>
-          TP (True Positive): {modelMetrics?.tp ?? 0} | FP (False Positive): {modelMetrics?.fp ?? 0} | TN (True Negative):{" "}
-          {modelMetrics?.tn ?? 0} | FN (False Negative): {modelMetrics?.fn ?? 0}
-        </span>
-      </section>
-
-      <section className="rules-grid">
+      {activeTab === "policy" ? (
+        <section className="rules-grid">
         <article className="rules-card model-weights-card">
           <div className="rules-card-header">
             <div className="rules-card-icon blue">
@@ -347,6 +344,30 @@ function RulesModels() {
           </div>
         </aside>
       </section>
+      ) : (
+        <section className="performance-summary-panel">
+          <div className="model-performance-header">
+            <h2>Detection Performance Summary</h2>
+            <p>
+              Rule-based scoring is evaluated across PaySim transactions, while the AI Risk Analyst is tracked separately.
+            </p>
+          </div>
+
+          <div className="performance-card-grid">
+            <article className="model-performance-card">
+              <span>Rule-Based Detection Accuracy</span>
+              <strong>{formatPercent(modelMetrics?.accuracy ?? 0)}</strong>
+              <p>Final rule-based multi-agent scoring accuracy across PaySim transactions.</p>
+            </article>
+
+            <article className="model-performance-card">
+              <span>AI Analyst Accuracy</span>
+              <strong>{formatPercent(aiAccuracy)}</strong>
+              <p>AI decisions correctly aligned with known fraud labels.</p>
+            </article>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

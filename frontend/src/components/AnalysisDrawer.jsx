@@ -107,7 +107,7 @@ function AnalysisDrawer({ transaction, analysis, loading, onClose }) {
               <div className="drawer-loading-spinner" />
               <div>
                 <strong>Running agent analysis</strong>
-                <span>Fraud, behavior, receiver, location, and AI Risk Analyst agents are scoring this transaction.</span>
+                <span>Fraud, behavior, receiver, and location agents are scoring this transaction. AI Risk Analyst is preparing an independent review.</span>
               </div>
             </div>
           ) : null}
@@ -182,7 +182,7 @@ function AnalysisDrawer({ transaction, analysis, loading, onClose }) {
           <section className={`drawer-panel risk-agent-panel risk-card-${String(aiRisk).toLowerCase()}`}>
             <div className="drawer-panel-header">
               <div>
-                <h3>AI Risk Analyst Agent</h3>
+                <h3>AI Risk Analyst Review</h3>
                 <p className="agent-score">Score: {Number(aiScore).toFixed(2)}</p>
               </div>
 
@@ -206,8 +206,8 @@ function AnalysisDrawer({ transaction, analysis, loading, onClose }) {
           </div>
 
           <p className="decision-note">
-            This transaction has been assigned a <strong>{riskLevel}</strong> risk
-            classification and the system recommends <strong>{decision}</strong>.
+            This rule-based multi-agent score assigns <strong>{riskLevel}</strong> risk
+            and recommends <strong>{decision}</strong>. AI Risk Analyst is shown separately.
           </p>
         </section>
       </aside>

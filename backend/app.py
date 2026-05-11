@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import json
+import math
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -88,6 +89,15 @@ def get_first_fraud_transaction():
 
     return fraud_df.iloc[0].to_dict()
 
+def clean_json_value(value, default=None):
+    if pd.isna(value):
+        return default
+
+    if isinstance(value, float) and not math.isfinite(value):
+        return default
+
+    return value
+
 def to_frontend_transaction(row: dict, idx: int) -> dict:
     transaction = build_transaction_record(row)
 
@@ -105,7 +115,7 @@ def to_frontend_transaction(row: dict, idx: int) -> dict:
     behavior_result = {"behavior_score": row.get("behavior_score", 0.0)}
     merchant_result = {"merchant_score": row.get("merchant_score", 0.0)}
 
-    return {
+    frontend_txn = {
         "id": idx + 1,
         "transaction_id": transaction.get("transaction_id", row.get("transaction_id", idx + 1)),
         "timestamp": row.get("timestamp"),
@@ -145,6 +155,11 @@ def to_frontend_transaction(row: dict, idx: int) -> dict:
         "customer_amount_ratio": row.get("customer_amount_ratio"),
         "isFraud": transaction["isFraud"],
         "isFlaggedFraud": transaction["isFlaggedFraud"],
+    }
+
+    return {
+        key: clean_json_value(value, 0.0 if isinstance(value, (int, float)) else "")
+        for key, value in frontend_txn.items()
     }
 
 

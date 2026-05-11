@@ -437,3 +437,74 @@
   align-items: center;
   gap: 12px;
 }
+
+.rules-tabs {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 6px;
+  padding: 5px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-control);
+  background: rgba(5, 9, 22, 0.42);
+}
+
+.rules-tab-button {
+  height: 36px;
+  border: 0;
+  border-radius: calc(var(--radius-control) - 4px);
+  padding: 0 14px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.rules-tab-button.active {
+  color: var(--text-primary);
+  background: rgba(59, 130, 246, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.34);
+}
+
+.performance-summary-panel {
+  max-width: 980px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 18px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03)),
+    var(--bg-card);
+  box-shadow: var(--shadow-card);
+}
+
+.performance-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(240px, 360px));
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.performance-card-grid .model-performance-card {
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+@media (max-width: 760px) {
+  .rules-tabs {
+    width: 100%;
+    align-self: stretch;
+  }
+
+  .rules-tab-button {
+    flex: 1;
+  }
+
+  .performance-card-grid {
+    grid-template-columns: 1fr;
+  }
+}

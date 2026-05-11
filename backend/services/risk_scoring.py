@@ -26,7 +26,6 @@ def combine_agent_scores(
         + FINAL_AGENT_WEIGHTS["behavior"] * behavior_score
         + FINAL_AGENT_WEIGHTS["merchant"] * merchant_score
         + FINAL_AGENT_WEIGHTS["location"] * location_score
-        + FINAL_AGENT_WEIGHTS.get("ai_analyst", 0.0) * ai_score
     )
 
     all_reasons = []
@@ -35,9 +34,6 @@ def combine_agent_scores(
     all_reasons.extend(behavior_result.get("reasons", []))
     all_reasons.extend(merchant_result.get("reasons", []))
     all_reasons.extend(location_result.get("reasons", []))
-
-    if ai_analyst_result:
-        all_reasons.extend(ai_analyst_result.get("reasons", []))
 
     unique_reasons = list(dict.fromkeys(all_reasons))
 

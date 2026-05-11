@@ -129,8 +129,7 @@ def risk_scoring_node(state: FraudGraphState) -> FraudGraphState:
         state.get("fraud_result", {}),
         state.get("behavior_result", {}),
         state.get("merchant_result", {}),
-        state.get("location_result", {}),
-        state.get("ai_analyst_result", {})
+        state.get("location_result", {})
     )
     return state
 

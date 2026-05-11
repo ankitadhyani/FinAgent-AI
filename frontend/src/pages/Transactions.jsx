@@ -11,7 +11,6 @@ const DEFAULT_RISK_CONFIG = {
     behavior_agent: { HIGH: 0.30, MEDIUM: 0.20 },
     merchant_agent: { HIGH: 0.15, MEDIUM: 0.10 },
     location_agent: { HIGH: 0.30, MEDIUM: 0.15 },
-    ai_analyst_agent: { HIGH: 0.5, MEDIUM: 0.3 },
   },
   final_system_thresholds: { ESCALATE: 0.30, BLOCK: 0.50 },
 };
@@ -350,7 +349,12 @@ function Transactions({ simulationWindow, onSimulationWindowChange }) {
       ai_analyst_agent: {
         ai_score: txn.ai_score ?? 0,
         score: txn.ai_score ?? 0,
-        risk_level: getAgentRisk(txn.ai_score, "ai_analyst_agent"),
+        risk_level:
+          txn.ai_decision === "BLOCK"
+            ? "HIGH"
+            : txn.ai_decision === "ESCALATE"
+            ? "MEDIUM"
+            : "LOW",
         reasons: buildAIReasons(txn),
       },
       final_result: {

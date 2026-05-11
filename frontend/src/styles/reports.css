@@ -142,16 +142,27 @@
 
 .report-document-card {
   overflow-y: auto;
-  padding-right: 18px;
+  padding-right: 10px;
 }
 
 .report-case-card,
 .report-document-card,
 .report-side-rail {
-  flex: 1;
   overflow-y: auto;
   height: 100%;
   min-height: 0;
+}
+
+.report-case-card {
+  flex: 0.72;
+}
+
+.report-document-card {
+  flex: 1.45;
+}
+
+.report-side-rail {
+  flex: 0.95;
 }
 
 .report-case-card,
@@ -570,4 +581,33 @@
 
 .agent-analysis-ai span {
   color: #a78bfa;
+}
+
+.reports-layout.pdf-export-mode {
+  display: block !important;
+  height: auto !important;
+  min-height: unset !important;
+  width: 1100px !important;
+}
+
+.reports-layout.pdf-export-mode .report-case-card,
+.reports-layout.pdf-export-mode .report-document-card,
+.reports-layout.pdf-export-mode .report-side-rail {
+  width: 100% !important;
+  height: auto !important;
+  overflow: visible !important;
+  margin-bottom: 16px;
+}
+
+.reports-layout.pdf-export-mode .report-side-rail {
+  display: block !important;
+}
+
+.reports-layout.pdf-export-mode .report-side-card {
+  margin-bottom: 16px;
+}
+
+.reports-layout.pdf-export-mode .report-case-card::-webkit-scrollbar,
+.reports-layout.pdf-export-mode .report-document-card::-webkit-scrollbar {
+  display: none;
 }

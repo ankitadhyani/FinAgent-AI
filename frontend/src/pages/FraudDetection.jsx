@@ -41,7 +41,6 @@ const defaultAgentRiskBands = {
   behavior_agent: { HIGH: 0.3, MEDIUM: 0.2 },
   merchant_agent: { HIGH: 0.15, MEDIUM: 0.1 },
   location_agent: { HIGH: 0.3, MEDIUM: 0.15 },
-  ai_analyst_agent: { HIGH: 0.5, MEDIUM: 0.3 },
 };
 
 function scoreRisk(score, agentName, agentRiskBands) {
@@ -269,8 +268,8 @@ function FraudDetection() {
           icon={Bot}
           title="AI Risk Analyst Agent"
           score={metrics.aiScore.toFixed(2)}
-          risk={scoreRisk(metrics.aiScore, "ai_analyst_agent", agentRiskBands)}
-          detail="Average AI risk analyst score across selected transactions"
+          risk="Independent"
+          detail="Independent AI analyst review, not included in final rule-based score"
           tone="purple"
         />
       </section>

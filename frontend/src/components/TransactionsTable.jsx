@@ -159,7 +159,7 @@ function TransactionsTable({
                 </th>
 
                 <th onClick={() => handleSort("final_score")} className="sortable">
-                  <span>Final Score</span>
+                  <span>Final Rule-Based Score</span>
                   {renderSortArrow("final_score")}
                 </th>
 

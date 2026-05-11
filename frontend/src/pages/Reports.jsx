@@ -125,7 +125,6 @@ function calculateDecisionConfidence(txn) {
     Number(txn?.behavior_score || 0),
     Number(txn?.merchant_score || 0),
     Number(txn?.location_score || 0),
-    Number(txn?.ai_score || 0),
   ];
 
   const avg = scores.reduce((sum, score) => sum + score, 0) / scores.length;
@@ -253,7 +252,7 @@ function Reports({ simulationWindow }) {
         ["Behavior Agent", selectedTxn.behavior_score, buildBehaviorReasons(selectedTxn)],
         ["Receiver Agent", selectedTxn.merchant_score, buildMerchantReasons(selectedTxn)],
         ["Location Agent", selectedTxn.location_score, buildLocationReasons(selectedTxn)],
-        ["AI Risk Analyst Agent", selectedTxn.ai_score, buildAIReasons(selectedTxn)],
+        ["AI Risk Analyst Review", selectedTxn.ai_score, buildAIReasons(selectedTxn)],
       ]
     : [];
   const transactionDetails = selectedTxn
@@ -269,7 +268,7 @@ function Reports({ simulationWindow }) {
         ["New Origin Balance", `$${formatAmount(selectedTxn.newbalanceOrig)}`],
         ["Old Destination Balance", `$${formatAmount(selectedTxn.oldbalanceDest)}`],
         ["New Destination Balance", `$${formatAmount(selectedTxn.newbalanceDest)}`],
-        ["Final Score", finalScore.toFixed(2)],
+        ["Final Rule-Based Score", finalScore.toFixed(2)],
         ["Risk Level", selectedTxn.risk],
         ["Decision", selectedTxn.decision],
         ["Fraud Score", formatValue(selectedTxn.fraud_score)],
@@ -278,7 +277,6 @@ function Reports({ simulationWindow }) {
         ["Location Score", formatValue(selectedTxn.location_score)],
         ["AI Analyst Score", formatValue(selectedTxn.ai_score)],
         ["AI Decision", formatValue(selectedTxn.ai_decision)],
-        ["AI Reasoning", formatValue(selectedTxn.ai_reasoning)],
         ["Customer Txn Count", formatValue(selectedTxn.customer_txn_count)],
         ["Customer Avg Amount", `$${formatAmount(selectedTxn.customer_avg_amount)}`],
         ["Customer Amount Ratio", formatValue(selectedTxn.customer_amount_ratio)],
@@ -309,10 +307,28 @@ function Reports({ simulationWindow }) {
   const exportReportPdf = async () => {
     if (!reportRef.current || !selectedTxn) return;
 
-    const canvas = await html2canvas(reportRef.current, {
+    const reportElement = reportRef.current;
+
+    const originalOverflow = reportElement.style.overflow;
+    const originalHeight = reportElement.style.height;
+    const originalMaxHeight = reportElement.style.maxHeight;
+
+    reportElement.style.overflow = "visible";
+    reportElement.style.height = "auto";
+    reportElement.style.maxHeight = "none";
+    reportElement.classList.add("pdf-export-mode");
+
+    const canvas = await html2canvas(reportElement, {
       scale: 2,
+      useCORS: true,
       backgroundColor: "#0b1020",
+      windowWidth: 1000,
+      windowHeight: reportElement.scrollHeight,
     });
+    reportElement.classList.remove("pdf-export-mode");
+    reportElement.style.overflow = originalOverflow;
+    reportElement.style.height = originalHeight;
+    reportElement.style.maxHeight = originalMaxHeight;
 
     const imgData = canvas.toDataURL("image/png");
     const pdf = new jsPDF("p", "mm", "a4");
@@ -504,11 +520,6 @@ function Reports({ simulationWindow }) {
               </div>
 
               <div className="summary-item">
-                <span>AI Reasoning</span>
-                <strong>{selectedTxn.ai_reasoning || "—"}</strong>
-              </div>
-
-              <div className="summary-item">
                 <span>Customer Amount Ratio</span>
                 <strong>{selectedTxn.customer_amount_ratio?.toFixed(2)}</strong>
               </div>
@@ -546,7 +557,7 @@ function Reports({ simulationWindow }) {
             <section className="report-section">
               <h3>Key Findings</h3>
               <ul>
-                <li>Risk score is {finalScore.toFixed(2)}, classified as {selectedTxn.risk}.</li>
+                <li>Rule-based multi-agent score is {finalScore.toFixed(2)}, classified as {selectedTxn.risk}.</li>
                 <li>System decision is {selectedTxn.decision} based on current risk policy.</li>
                 <li>{selectedCase.reason}.</li>
                 <li>Primary signal: {reasonGroups.flatMap(([, , reasons]) => reasons)[0]}</li>
@@ -562,7 +573,7 @@ function Reports({ simulationWindow }) {
                     className={`agent-analysis-item ${
                       agentName === "Receiver Agent"
                         ? "agent-analysis-merchant"
-                        : agentName === "AI Risk Analyst Agent"
+                        : agentName === "AI Risk Analyst Review"
                         ? "agent-analysis-ai"
                         : `agent-analysis-${agentName.split(" ")[0].toLowerCase()}`
                     }`}
@@ -608,7 +619,7 @@ function Reports({ simulationWindow }) {
               </div>
 
               <p className="report-confidence-description">
-                Confidence derived from agreement consistency across fraud, sender and receiver behavior, location, and AI Risk Analyst agents.
+                Confidence derived from agreement consistency across fraud, behavior, receiver, and location scores only. AI Risk Analyst is reviewed separately.
               </p>
 
               <div className="report-confidence-track">
