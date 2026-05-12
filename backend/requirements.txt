@@ -146,3 +146,5 @@ websocket-client==1.9.0
 Werkzeug==2.2.3
 xxhash==3.7.0
 zstandard==0.25.0
+google-genai==1.52.0
+python-dotenv==1.1.1

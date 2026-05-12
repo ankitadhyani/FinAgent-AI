@@ -14,7 +14,17 @@ function AnalysisDrawer({ transaction, analysis, loading, onClose }) {
   const behaviorRisk = behaviorAgent?.risk_level || "LOW";
   const merchantRisk = merchantAgent?.risk_level || "LOW";
   const locationRisk = locationAgent?.risk_level || "LOW";
-  const aiRisk = ai_analyst_agent?.risk_level || "LOW";
+  const aiDecision =
+    ai_analyst_agent?.decision ||
+    ai_analyst_agent?.risk_level ||
+    transaction?.ai_decision ||
+    "APPROVE";
+  const aiRisk =
+    aiDecision === "BLOCK"
+      ? "HIGH"
+      : aiDecision === "ESCALATE"
+      ? "MEDIUM"
+      : "LOW";
 
   const decision = finalResult?.decision || transaction?.decision || "APPROVE";
   const riskLevel = finalResult?.risk_level || transaction?.risk || "LOW";

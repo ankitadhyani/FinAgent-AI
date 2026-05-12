@@ -20,5 +20,7 @@ venv/
 
 # Large generated backend data
 backend/data/*.csv
+!backend/data/paysim_demo.csv
+
 backend/data/*.pkl
 backend/data/*.json

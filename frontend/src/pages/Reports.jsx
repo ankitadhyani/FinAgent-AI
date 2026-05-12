@@ -95,13 +95,36 @@ const buildMerchantReasons = (txn) => {
 
 const buildLocationReasons = (txn) => {
   const reasons = [];
-  if (txn.geo_distance_km) {
-    reasons.push(`Geographic distance: ${Number(txn.geo_distance_km).toFixed(2)} km.`);
+
+  if (txn.geo_risk === 1) {
+    reasons.push("Geographic anomaly risk flag detected.");
   }
-  if (txn.geo_distance_km && Number(txn.geo_distance_km) > 500) {
-    reasons.push(`Large geographic jump detected: ${Number(txn.geo_distance_km).toFixed(2)} km.`);
+
+  if (Number(txn.geo_distance_km || 0) > 0) {
+    reasons.push(`Movement from previous transaction location: ${Number(txn.geo_distance_km).toFixed(2)} km.`);
   }
-  if (txn.geo_risk === 1) reasons.push("Location risk signal is active.");
+
+  if (Number(txn.home_distance_km || 0) > 0) {
+    reasons.push(`Distance from customer home region: ${Number(txn.home_distance_km).toFixed(2)} km.`);
+  }
+
+  const travelSpeed = Number(txn.travel_speed_kmh || 0);
+  if (travelSpeed > 0) {
+    reasons.push(`Estimated travel speed: ${travelSpeed.toFixed(2)} km/h.`);
+  }
+
+  if (travelSpeed >= 900) {
+    reasons.push("Impossible travel speed detected.");
+  } else if (travelSpeed >= 300) {
+    reasons.push("Very high travel speed detected.");
+  } else if (travelSpeed >= 120) {
+    reasons.push("Elevated travel speed detected.");
+  }
+
+  if ((txn.is_night === 1 || txn.is_night === "1" || txn.is_night === true) && travelSpeed >= 300) {
+    reasons.push("High geographic movement during night hours.");
+  }
+
   return reasons.length ? reasons : ["No location anomaly detected."];
 };
 

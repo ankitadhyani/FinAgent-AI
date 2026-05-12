@@ -4,6 +4,8 @@ AI-Powered Multi-Agent Fraud Detection & Financial Risk Intelligence Framework.
 
 FinAgent AI is an autonomous fraud investigation platform that analyzes financial transactions using multiple specialized AI agents. The system combines fraud detection, customer behavior analysis, receiver-side analysis, location intelligence, and AI-generated contextual reasoning to produce real-time transaction risk scores and decisions.
 
+This project is intended for academic demonstration and fraud-risk research purposes using synthetic PaySim transaction data.
+
 ---
 
 # Features
@@ -25,7 +27,8 @@ FinAgent AI uses 5 specialized agents:
   - Detects suspicious geographic movement patterns and high-risk location signals.
 
 - AI Risk Analyst Agent
-  - Uses AI-generated contextual reasoning fields to provide additional fraud intelligence and decision support.
+  - Gemini-powered AI contextual reasoning
+  - Independent AI fraud decision analysis
 
 ---
 
@@ -44,7 +47,7 @@ FinAgent AI uses 5 specialized agents:
 - Interactive fraud analytics dashboard
 - Receiver-side intelligence analysis
 - Geographic anomaly detection
-- Model performance metrics dashboard
+- Detection performance monitoring dashboard
 
 ---
 
@@ -56,7 +59,9 @@ FinAgent AI uses 5 specialized agents:
 - FastAPI
 - LangGraph
 - Pandas
-- Scikit-learn
+- NumPy
+- Google Gemini API
+- Python-dotenv
 
 ## Frontend
 
@@ -70,6 +75,85 @@ FinAgent AI uses 5 specialized agents:
 - Multi-Agent Risk Scoring Engine
 - AI-generated contextual reasoning
 - LangGraph workflow orchestration
+
+---
+
+# Dataset
+
+The project uses the PaySim financial transaction dataset enriched with engineered fraud-risk features, customer behavior profiles, receiver intelligence, and geographic risk signals.
+
+Key engineered features include:
+
+- Transaction velocity signals
+- Amount risk indicators
+- Balance anomaly detection
+- Receiver-side risk profiling
+- Geographic risk scoring
+- Device and behavioral risk signals
+- Historical customer transaction patterns
+
+A lightweight demo dataset (`paysim_demo.csv`) is included for frontend visualization and testing.
+
+For running the submitted project, the primary required dataset is `paysim_demo.csv`, which is included for lightweight backend execution, frontend visualization, and demo testing.
+
+---
+
+# Data Pipeline & Dataset Flow
+
+The original PaySim financial transaction dataset is not included in submission due to file size limitations.
+
+Raw PaySim dataset source:
+https://www.kaggle.com/datasets/ealaxi/paysim1
+
+FinAgent AI uses a multi-stage data engineering pipeline:
+
+```text
+paysim.csv
+    ↓
+Feature Engineering Pipeline
+    ↓
+paysim_enriched.csv
+    ↓
+Customer & Receiver Profile Generation
+    ├── customer_profiles.pkl
+    └── merchant_profiles.pkl
+    ↓
+Rule-Based Multi-Agent Scoring
+    ↓
+paysim_scored.csv
+    ↓
+Balanced Demo Dataset Builder
+    ↓
+paysim_demo.csv (once created will not be recreated)
+```
+
+## Pipeline Description
+
+### `paysim.csv`
+- Original raw PaySim transaction dataset.
+
+### `paysim_enriched.csv`
+- Enriched dataset containing engineered fraud-risk features such as:
+  - velocity risk
+  - amount risk
+  - balance anomaly signals
+  - geographic risk
+  - customer behavior signals
+  - device risk features
+
+### `customer_profiles.pkl`
+- Historical customer behavior profiles generated from the enriched dataset.
+
+### `merchant_profiles.pkl`
+- Receiver-side intelligence profiles generated from the enriched dataset.
+
+### `paysim_scored.csv`
+- Full dataset scored using the multi-agent fraud scoring pipeline.
+
+### `paysim_demo.csv`
+- Lightweight balanced demo dataset used for frontend visualization, backend execution, and presentation demonstrations.
+
+For running the submitted project, only `paysim_demo.csv` is required.
 
 ---
 
@@ -95,6 +179,16 @@ FinAgent/
 │   └── vite.config.js
 │
 └── README.md
+```
+---
+
+# Environment Variables
+
+Create a `.env` file inside the backend folder:
+
+```env
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 ---
@@ -189,22 +283,14 @@ python3 -m tests.test_risk_scoring
 
 ---
 
-# Frontend Dependency
+# Detection Performance Summary
 
-```bash
-npm install lucide-react
-```
+The rule-based multi-agent scoring engine and the AI Risk Analyst Agent are evaluated independently on sampled PaySim demo transactions.
 
----
+- Rule-Based Detection Accuracy (sampled demo dataset): 100%
+- AI Risk Analyst Accuracy: 72.5%
 
-# Current Model Performance
-
-Validation metrics on balanced fraud vs non-fraud dataset:
-
-- Accuracy: 98.7%
-- Precision: 97.8%
-- Recall: 99.6%
-- F1-Score: 98.7%
+The AI Risk Analyst operates independently from the final rule-based scoring pipeline and provides separate contextual fraud analysis for analyst review.
 
 ---
 
@@ -229,6 +315,28 @@ Final Decision
         ↓
 Investigation Report Generation
 ```
+---
+
+# AI Decision Architecture
+
+The rule-based multi-agent scoring system and the AI Risk Analyst Agent operate independently.
+
+- Fraud, Behavior, Receiver, and Location agents contribute to the final rule-based transaction score.
+- The AI Risk Analyst Agent performs separate contextual fraud analysis using Gemini-generated reasoning.
+- The AI-generated decision is not merged into the final rule-based score and is displayed independently for analyst review.
+
+---
+
+# Submission Notes
+
+The following large/generated files are excluded from submission:
+
+- paysim_enriched.csv
+- paysim_scored.csv
+- customer_profiles.pkl
+- merchant_profiles.pkl
+
+Only the demo dataset (`paysim_demo.csv`) is included for lightweight execution and UI demonstration.
 
 ---
 

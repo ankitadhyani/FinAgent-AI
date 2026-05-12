@@ -49,9 +49,27 @@ function buildDetectionRules(config) {
       status: "Active",
     },
     {
+      rule: "Suspicious TRANSFER / CASH_OUT pattern",
+      agent: "Fraud Agent",
+      impact: "High",
+      status: "Active",
+    },
+    {
+      rule: "Balance anomaly detected",
+      agent: "Fraud Agent",
+      impact: "High",
+      status: "Active",
+    },
+    {
       rule: `Amount ratio > ${agents.behavior_agent?.amount_ratio_medium_threshold ?? 5}x average`,
       agent: "Behavior Agent",
       impact: "Medium",
+      status: "Active",
+    },
+    {
+      rule: "Velocity risk detected",
+      agent: "Behavior Agent",
+      impact: "High",
       status: "Active",
     },
     {

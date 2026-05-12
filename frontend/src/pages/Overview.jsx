@@ -60,12 +60,11 @@ function buildChartData(transactions, startDate, endDate, bucketCount = 8) {
     );
 
     const approve = bucketTxns.filter((txn) => txn.decision === "APPROVE").length;
-    const review = bucketTxns.filter((txn) => txn.decision === "REVIEW").length;
     const escalate = bucketTxns.filter((txn) => txn.decision === "ESCALATE").length;
     const block = bucketTxns.filter((txn) => txn.decision === "BLOCK").length;
 
     const total = bucketTxns.length;
-    const flagged = review + escalate + block;
+    const flagged = escalate + block;
 
     buckets.push({
       timestamp: new Date(bucketStart).toLocaleDateString(undefined, {
@@ -75,7 +74,6 @@ function buildChartData(transactions, startDate, endDate, bucketCount = 8) {
       total,
       flagged,
       approve,
-      review,
       escalate,
       block,
     });
@@ -218,6 +216,11 @@ function Overview({ simulationWindow, onSimulationWindowChange }) {
     riskLevel: "ALL",
     txnType: "ALL",
   });
+
+  const transactionTypes = useMemo(() => {
+    const types = [...new Set(allTransactions.map((txn) => txn.type).filter(Boolean))].sort();
+    return types.length ? types : ["CASH_IN", "CASH_OUT", "DEBIT", "PAYMENT", "TRANSFER"];
+  }, [allTransactions]);
 
   useEffect(() => {
     if (allTransactions.length > 0) {
@@ -431,6 +434,7 @@ function Overview({ simulationWindow, onSimulationWindowChange }) {
         endDate={endDateInput}
         riskLevel={riskLevelInput}
         txnType={txnTypeInput}
+        txnTypes={transactionTypes}
         resultCount={filteredTransactions.length}
         minDate={datasetMinDate}
         maxDate={datasetMaxDate}

@@ -15,6 +15,7 @@ function FilterBar({
   endDate,
   riskLevel,
   txnType,
+  txnTypes = ["CASH_IN", "CASH_OUT", "DEBIT", "PAYMENT", "TRANSFER"],
   resultCount,
   minDate,
   maxDate,
@@ -90,9 +91,11 @@ function FilterBar({
                 onChange={(e) => onTxnTypeChange(e.target.value)}
               >
                 <option value="ALL">All</option>
-                <option value="PAYMENT">PAYMENT</option>
-                <option value="TRANSFER">TRANSFER</option>
-                <option value="CASH_OUT">CASH_OUT</option>
+                {txnTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
               </select>
             </div>
 

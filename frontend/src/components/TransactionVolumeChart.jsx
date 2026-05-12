@@ -40,10 +40,6 @@ function CustomTooltip({ active, payload, label }) {
           <span>APPROVE</span>
           <strong>{data.approve}</strong>
         </div>
-        <div className="tooltip-row review-row">
-          <span>REVIEW</span>
-          <strong>{data.review}</strong>
-        </div>
         <div className="tooltip-row escalate-row">
           <span>ESCALATE</span>
           <strong>{data.escalate}</strong>

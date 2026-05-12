@@ -2,18 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Download, RotateCcw, Search } from "lucide-react";
 import AnalysisDrawer from "../components/AnalysisDrawer";
 import TransactionsTable from "../components/TransactionsTable";
-import { getRiskConfig, getTransactions } from "../api/client";
+import { analyzeTransaction, getTransactions } from "../api/client";
 
 const PAGE_SIZE = 50;
-const DEFAULT_RISK_CONFIG = {
-  agent_risk_bands: {
-    fraud_agent: { HIGH: 0.35, MEDIUM: 0.30 },
-    behavior_agent: { HIGH: 0.30, MEDIUM: 0.20 },
-    merchant_agent: { HIGH: 0.15, MEDIUM: 0.10 },
-    location_agent: { HIGH: 0.30, MEDIUM: 0.15 },
-  },
-  final_system_thresholds: { ESCALATE: 0.30, BLOCK: 0.50 },
-};
 
 function Transactions({ simulationWindow, onSimulationWindowChange }) {
   const [transactions, setTransactions] = useState([]);
@@ -23,7 +14,6 @@ function Transactions({ simulationWindow, onSimulationWindowChange }) {
   const [selectedTxn, setSelectedTxn] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
-  const [riskConfig, setRiskConfig] = useState(DEFAULT_RISK_CONFIG);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [txnType, setTxnType] = useState("ALL");
@@ -53,15 +43,11 @@ function Transactions({ simulationWindow, onSimulationWindowChange }) {
         setLoadingTransactions(true);
         setTransactionsError("");
 
-        const [response, config] = await Promise.all([
-          getTransactions({ limit: 600, offset: 0 }),
-          getRiskConfig().catch(() => DEFAULT_RISK_CONFIG),
-        ]);
+        const response = await getTransactions({ limit: 600, offset: 0 });
 
         if (!isActive) return;
 
         setTransactions(response.items || []);
-        setRiskConfig(config || DEFAULT_RISK_CONFIG);
 
       } catch (error) {
         if (!isActive) return;
@@ -202,168 +188,28 @@ function Transactions({ simulationWindow, onSimulationWindowChange }) {
     onSimulationWindowChange?.(nextWindow);
   };
 
-  const buildFraudReasons = (txn) => {
-    const reasons = [];
-
-    if (txn.type === "TRANSFER" || txn.type === "CASH_OUT") {
-      reasons.push(`${txn.type} type is commonly associated with fraud.`);
-    }
-
-    if (Number(txn.amount || 0) > 200000) {
-      reasons.push(`High transaction amount detected: $${Number(txn.amount).toLocaleString()}.`);
-    }
-
-    if (txn.balance_risk === 1) {
-      reasons.push("Balance-risk pattern detected.");
-    }
-
-    if (txn.amount_risk === 1) {
-      reasons.push("Amount risk signal is active.");
-    }
-
-    return reasons.length ? reasons : ["No major fraud pattern detected."];
-  };
-
-  const buildBehaviorReasons = (txn) => {
-    const reasons = [];
-
-    if (txn.customer_amount_ratio) {
-      reasons.push(
-        `Transaction is ${Number(txn.customer_amount_ratio).toFixed(2)}x the customer's average amount.`
-      );
-    }
-
-    if (txn.velocity_risk === 1) {
-      reasons.push("High transaction velocity detected.");
-    }
-
-    if (txn.behavior_risk === 1) {
-      reasons.push("Customer behavior risk signal is active.");
-    }
-
-    if (txn.customer_txn_count && Number(txn.customer_txn_count) < 5) {
-      reasons.push("Limited customer history available.");
-    }
-
-    return reasons.length ? reasons : ["No strong behavioral anomaly detected."];
-  };
-
-  const buildMerchantReasons = (txn) => {
-    const reasons = [];
-
-    if (txn.type === "TRANSFER" || txn.type === "CASH_OUT") {
-      reasons.push(`Risky destination transaction type: ${txn.type}.`);
-    }
-
-    if (Number(txn.amount || 0) > 200000) {
-      reasons.push("High-value transfer/cash-out transaction.");
-    }
-
-    if (txn.device_risk === 1) {
-      reasons.push("Device risk signal is active.");
-    }
-
-    if (txn.balance_risk === 1) {
-      reasons.push("Balance risk signal is active.");
-    }
-
-    return reasons.length ? reasons : ["No strong counterparty anomaly detected."];
-  };
-
-  const buildLocationReasons = (txn) => {
-    const reasons = [];
-
-    if (txn.geo_distance_km) {
-      reasons.push(`Geographic distance: ${Number(txn.geo_distance_km).toFixed(2)} km.`);
-    }
-
-    if (txn.geo_distance_km && Number(txn.geo_distance_km) > 500) {
-      reasons.push(`Large geographic jump detected: ${Number(txn.geo_distance_km).toFixed(2)} km.`);
-    }
-
-    if (txn.geo_risk === 1) {
-      reasons.push("Location risk signal is active.");
-    }
-
-    return reasons.length ? reasons : ["No location anomaly detected."];
-  };
-
-  const buildAIReasons = (txn) => {
-    const reasons = [];
-
-    if (txn.ai_reasoning) reasons.push(txn.ai_reasoning);
-
-    if (txn.ai_score && Number(txn.ai_score) > 0) {
-      reasons.push("AI Risk Analyst detected contextual transaction risk patterns.");
-    }
-
-    return reasons.length
-      ? reasons
-      : ["No strong AI Risk Analyst signal detected."];
-  };
-
-  const buildFinalReasons = (txn) => [
-    `Final score is ${Math.round(Number(txn.final_score || 0) * 100)}%.`,
-    `Risk level is ${txn.risk}.`,
-    `Recommended decision is ${txn.decision}.`,
-  ];
-
-  const getAgentRisk = (score, agentName) => {
-    const value = Number(score || 0);
-    const bands = riskConfig.agent_risk_bands?.[agentName] || {};
-
-    if (value >= Number(bands.HIGH ?? 1)) return "HIGH";
-    if (value >= Number(bands.MEDIUM ?? 1)) return "MEDIUM";
-    return "LOW";
-  };
-
-  const analyzeSelectedTransaction = (txn) => {
+  const analyzeSelectedTransaction = async (txn) => {
     setSelectedTxn(txn);
-    setLoadingAnalysis(false);
+    setLoadingAnalysis(true);
+    setAnalysisResult(null);
 
-    setAnalysisResult({
-      fraud_agent: {
-        fraud_score: txn.fraud_score ?? 0,
-        score: txn.fraud_score ?? 0,
-        risk_level: getAgentRisk(txn.fraud_score, "fraud_agent"),
-        reasons: buildFraudReasons(txn),
-      },
-      behavior_agent: {
-        behavior_score: txn.behavior_score ?? 0,
-        score: txn.behavior_score ?? 0,
-        risk_level: getAgentRisk(txn.behavior_score, "behavior_agent"),
-        reasons: buildBehaviorReasons(txn),
-      },
-      merchant_agent: {
-        merchant_score: txn.merchant_score ?? 0,
-        score: txn.merchant_score ?? 0,
-        risk_level: getAgentRisk(txn.merchant_score, "merchant_agent"),
-        reasons: buildMerchantReasons(txn),
-      },
-      location_agent: {
-        location_score: txn.location_score ?? 0,
-        score: txn.location_score ?? 0,
-        risk_level: getAgentRisk(txn.location_score, "location_agent"),
-        reasons: buildLocationReasons(txn),
-      },
-      ai_analyst_agent: {
-        ai_score: txn.ai_score ?? 0,
-        score: txn.ai_score ?? 0,
-        risk_level:
-          txn.ai_decision === "BLOCK"
-            ? "HIGH"
-            : txn.ai_decision === "ESCALATE"
-            ? "MEDIUM"
-            : "LOW",
-        reasons: buildAIReasons(txn),
-      },
-      final_result: {
-        final_score: txn.final_score ?? 0,
-        risk_level: txn.risk,
-        decision: txn.decision,
-        reasons: buildFinalReasons(txn),
-      },
-    });
+    const payload = {
+      ...txn,
+      nameOrig: txn.sender,
+      nameDest: txn.receiver,
+      isFraud: txn.isFraud ?? 0,
+      isFlaggedFraud: txn.isFlaggedFraud ?? 0,
+    };
+
+    try {
+      const result = await analyzeTransaction(payload);
+      setAnalysisResult(result);
+    } catch (error) {
+      console.error("Backend analyze failed:", error);
+      setAnalysisResult(null);
+    } finally {
+      setLoadingAnalysis(false);
+    }
   };
 
   if (loadingTransactions && transactions.length === 0) {
