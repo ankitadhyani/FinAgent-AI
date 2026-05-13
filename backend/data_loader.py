@@ -21,11 +21,16 @@ def load_data():
 
 
 def load_profiles():
-    with open(CUSTOMER_PROFILE_PATH, "rb") as f:
-        customer_profiles = pickle.load(f)
+    customer_profiles = {}
+    merchant_profiles = {}
 
-    with open(MERCHANT_PROFILE_PATH, "rb") as f:
-        merchant_profiles = pickle.load(f)
+    if os.path.exists(CUSTOMER_PROFILE_PATH):
+        with open(CUSTOMER_PROFILE_PATH, "rb") as f:
+            customer_profiles = pickle.load(f)
+
+    if os.path.exists(MERCHANT_PROFILE_PATH):
+        with open(MERCHANT_PROFILE_PATH, "rb") as f:
+            merchant_profiles = pickle.load(f)
 
     return customer_profiles, merchant_profiles
 

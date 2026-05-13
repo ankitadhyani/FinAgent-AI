@@ -195,9 +195,52 @@ GEMINI_MODEL=gemini-2.5-flash
 
 # Run the Project
 
+## Prerequisites
+
+Before running the project on a new system, install:
+
+- Python 3.10 or newer
+- Node.js LTS, which includes npm
+- Internet access for installing Python and frontend dependencies
+
+Verify the tools are available:
+
+Windows:
+
+```powershell
+python --version
+node -v
+npm -v
+```
+
+macOS / Linux:
+
+```bash
+python3 --version
+node -v
+npm -v
+```
+
+The demo backend requires `backend/data/paysim_demo.csv`, which is included in this project. The generated profile files `customer_profiles.pkl` and `merchant_profiles.pkl` are optional for the lightweight demo run.
+
+If using Gemini AI features, create `backend/.env` with:
+
+```env
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-2.5-flash
+```
+
 ## Backend Setup (FastAPI)
 
 ### Step 1: Navigate to backend
+
+Windows:
+
+```powershell
+cd backend
+```
+
+macOS / Linux:
 
 ```bash
 cd backend
@@ -205,11 +248,27 @@ cd backend
 
 ### Step 2: Install Python dependencies
 
+Windows:
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+macOS / Linux:
+
 ```bash
-pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 ```
 
 ### Step 3: Start backend server
+
+Windows:
+
+```powershell
+python -m uvicorn app:app --reload
+```
+
+macOS / Linux:
 
 ```bash
 python3 -m uvicorn app:app --reload
@@ -231,11 +290,41 @@ http://127.0.0.1:8000/docs
 
 ## Frontend Setup (React + Vite)
 
+Install Node.js LTS before running the frontend:
+
+```text
+https://nodejs.org/
+```
+
+After installation, close and reopen your terminal, then verify:
+
+Windows:
+
+```powershell
+node -v
+npm -v
+```
+
+macOS / Linux:
+
+```bash
+node -v
+npm -v
+```
+
 ### Step 4: Open a new terminal
 
 Keep backend running.
 
 ### Step 5: Navigate to frontend
+
+Windows:
+
+```powershell
+cd frontend
+```
+
+macOS / Linux:
 
 ```bash
 cd frontend
@@ -243,11 +332,41 @@ cd frontend
 
 ### Step 6: Install frontend dependencies
 
+Windows:
+
+```powershell
+npm install
+```
+
+macOS / Linux:
+
 ```bash
 npm install
 ```
 
+If npm has certificate issues in a restricted school or corporate network, use:
+
+Windows:
+
+```powershell
+npm install --strict-ssl=false
+```
+
+macOS / Linux:
+
+```bash
+npm install --strict-ssl=false
+```
+
 ### Step 7: Start frontend
+
+Windows:
+
+```powershell
+npm run dev
+```
+
+macOS / Linux:
 
 ```bash
 npm run dev
@@ -265,17 +384,41 @@ http://localhost:5173
 
 ## Fraud Agent Test
 
+Windows:
+
+```powershell
+python -m tests.test_fraud_agent
+```
+
+macOS / Linux:
+
 ```bash
 python3 -m tests.test_fraud_agent
 ```
 
 ## Behavior Agent Test
 
+Windows:
+
+```powershell
+python -m tests.test_behavior_agent
+```
+
+macOS / Linux:
+
 ```bash
 python3 -m tests.test_behavior_agent
 ```
 
 ## Risk Scoring Test
+
+Windows:
+
+```powershell
+python -m tests.test_risk_scoring
+```
+
+macOS / Linux:
 
 ```bash
 python3 -m tests.test_risk_scoring
